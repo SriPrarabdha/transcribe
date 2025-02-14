@@ -1,7 +1,8 @@
-import { useContext, useRef, useCallback } from 'react';
+import { useContext, useRef, useCallback, useState, useEffect } from 'react';
 import { StyleSheet, Text, View, Button } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Chat, Images, Settings, Assistant } from './screens'
+import { Chat, Images, Settings, Assistant, Transcribe } from './screens'
+import { Auth } from './screens/Auth'
 import { Header } from './components'
 import FeatherIcon from '@expo/vector-icons/Feather'
 import {
@@ -9,13 +10,28 @@ import {
   useSafeAreaInsets,
 } from 'react-native-safe-area-context'
 import { ThemeContext } from './context'
+import { auth } from './config/firebase'
+import { onAuthStateChanged, User } from 'firebase/auth'
 
 const Tab = createBottomTabNavigator()
 
 function MainComponent() {
+  const [user, setUser] = useState<User | null>(null);
   const insets = useSafeAreaInsets()
   const { theme } = useContext(ThemeContext)
   const styles = getStyles({ theme, insets })
+  
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+    });
+
+    return unsubscribe;
+  }, []);
+
+  if (!user) {
+    return <Auth />;
+  }
   
   return (
     <View style={styles.container}>
@@ -79,6 +95,20 @@ function MainComponent() {
             tabBarIcon: ({ color, size }) => (
               <FeatherIcon
                 name="sliders"
+                color={color}
+                size={size}
+              />
+            ),
+          }}
+        />
+        <Tab.Screen
+          name="Transcribe"
+          component={Transcribe}
+          options={{
+            header: () => <Header />,
+            tabBarIcon: ({ color, size }) => (
+              <FeatherIcon
+                name="mic"
                 color={color}
                 size={size}
               />
